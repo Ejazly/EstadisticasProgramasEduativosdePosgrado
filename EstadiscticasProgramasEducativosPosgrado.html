@@ -1,0 +1,287 @@
+
+<style>
+.dashboard {
+  max-width: 1400px;
+  margin: auto;
+}
+.dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .dashboard { padding: 0 0 32px; font-family: var(--font-sans, sans-serif); color: var(--color-text-primary); }
+  .header-card { background: #E8603A; border-radius: 10px; text-align: center; padding: 18px 24px 16px; margin-bottom: 28px; color: #fff; }
+  .header-card .label { font-size: 18px; font-weight: 500; }
+  .header-card .number { font-size: 40px; font-weight: 500; line-height: 1.1; }
+  .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; font-size: 13px; }
+  .summary-table th { background: #1B3A6B; color: #fff; padding: 10px 14px; text-align: left; font-weight: 500; }
+  .summary-table th:not(:first-child) { text-align: center; }
+  .summary-table td { padding: 9px 14px; border-bottom: 1px solid var(--color-border-tertiary); }
+  .summary-table td:not(:first-child) { text-align: center; }
+  .summary-table tr:nth-child(even) td { background: var(--color-background-secondary); }
+  .summary-table tfoot td { font-weight: 500; color: #1B3A6B; background: #E8F0F8; border-top: 2px solid #1B3A6B; }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 12px; }
+  .row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 28px;
+  align-items: center;
+  flex-wrap: wrap; /* 🔥 clave */
+}
+  .chart-box { flex: 1; min-width: 0; }
+  .legend { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--color-text-secondary); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .bar-legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--color-text-secondary); }
+  .bar-legend-item { display: flex; align-items: center; gap: 5px; }
+  .bar-legend-sq { width: 12px; height: 12px; border-radius: 2px; }
+</style>
+
+<div class="dashboard">
+
+  <p class="section-title" style="margin-bottom:10px;">Resumen por tipo de programa</p>
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Tipo de programa</th>
+        <th>Registrados en el SNP</th>
+        <th>No acreditado</th>
+        <th>Acreditados por CIEES</th>
+        <th>TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Especialidades</td><td>3</td><td>36</td><td>1</td><td>40</td></tr>
+      <tr><td>Maestrías</td><td>40</td><td>27</td><td>7</td><td>74</td></tr>
+      <tr><td>Doctorados</td><td>16</td><td>9</td><td>2</td><td>27</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td>Totales:</td><td>59</td><td>72</td><td>10</td><td>141</td></tr>
+    </tfoot>
+  </table>
+
+  <p class="section-title">Porcentaje de programas por facultad</p>
+  <div class="row">
+    <div class="chart-box" style="max-width:320px;">
+      <div style="position:relative;width:100%;height:300px;">
+        <canvas id="pieFacultad" role="img" aria-label="Porcentaje de programas por facultad">Distribución por facultad.</canvas>
+      </div>
+    </div>
+    <div class="legend" id="pieFacultadLegend"></div>
+  </div>
+
+  <p class="section-title"># Programas CIEES y Programas SNP 2026 por Facultad</p>
+  <div class="bar-legend">
+    <span class="bar-legend-item"><span class="bar-legend-sq" style="background:#4472C4;"></span>Programas CIEES</span>
+    <span class="bar-legend-item"><span class="bar-legend-sq" style="background:#ED7D31;"></span>Programas SNP 2026</span>
+  </div>
+  <div style="position:relative;width:100%;height:340px;margin-bottom:32px;">
+    <canvas id="barFacultad" role="img" aria-label="Programas CIEES y SNP 2026 por facultad">Datos por facultad.</canvas>
+  </div>
+
+  <p class="section-title">Porcentaje por tipo de orientacion de los programas</p>
+  <div class="row">
+    <div class="chart-box" style="max-width:320px;">
+      <div style="position:relative;width:100%;height:300px;">
+        <canvas id="pieOrientacion" role="img" aria-label="Tipo de orientación de los programas">65.5% Profesionalizante, 34.5% Investigación.</canvas>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#1F4E79;"></span>Profesionalizante</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#9DC3E6;"></span>Investigación</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// Facultades con porcentajes CORREGIDOS y datos CIEES/SNP corregidos por imagen
+// Orden en barras según imagen: Artes, Informática, Enfermería, Contaduría, Secretaría, Filosofía, Química, Psicología, Ciencias P., Medicina, Lenguas y L., Ingeniería, Derecho, Ciencias N.
+const facultades = [
+  { label: 'Medicina',                    short: 'Medicina',     pct: 18.3, color: '#1A3F7A', ciees: 0,  snp: 4  },
+  { label: 'Ingeniería',                  short: 'Ingeniería',   pct: 12.7, color: '#2255A0', ciees: 0,  snp: 15 },
+  { label: 'Derecho',                     short: 'Derecho',      pct: 11.3, color: '#2D6AC4', ciees: 0,  snp: 3  },
+  { label: 'Química',                     short: 'Química',      pct: 7.7,  color: '#3A82D8', ciees: 0,  snp: 10 },
+  { label: 'Contaduría y Administración', short: 'Contadurí…',   pct: 7.0,  color: '#4E99E0', ciees: 1,  snp: 1  },
+  { label: 'Artes',                       short: 'Artes',        pct: 7.0,  color: '#63AFE8', ciees: 4,  snp: 5  },
+  { label: 'Ciencias Naturales',          short: 'Ciencias N…',  pct: 5.6,  color: '#78C2F0', ciees: 0,  snp: 4  },
+  { label: 'Psicología',                  short: 'Psicología',   pct: 5.6,  color: '#8BCFF5', ciees: 0,  snp: 4  },
+  { label: 'Enfermería',                  short: 'Enfermería',   pct: 5.6,  color: '#9ED9F8', ciees: 1,  snp: 0  },
+  { label: 'Informática',                 short: 'Informática',  pct: 5.6,  color: '#B1E0FA', ciees: 2,  snp: 1  },
+  { label: 'Filosofía',                   short: 'Filosofía',    pct: 4.2,  color: '#C3E7FB', ciees: 1,  snp: 5  },
+  { label: 'Ciencias Políticas y Sociales',short:'Ciencias P…',  pct: 4.2,  color: '#D5EEFC', ciees: 0,  snp: 3  },
+  { label: 'Lenguas y Letras',            short: 'Lenguas y…',   pct: 2.8,  color: '#E3F4FD', ciees: 0,  snp: 3  },
+  { label: 'Secretaría Académica',        short: 'Secretaría…',  pct: 2.1,  color: '#EEF8FE', ciees: 1,  snp: 1  },
+];
+
+// Order for bar chart matching the screenshot
+const barOrder = [
+  'Artes','Informática','Enfermería','Contaduría y Administración','Secretaría Académica',
+  'Filosofía','Química','Psicología','Ciencias Políticas y Sociales','Medicina',
+  'Lenguas y Letras','Ingeniería','Derecho','Ciencias Naturales'
+];
+const barFacs = barOrder.map(name => facultades.find(f => f.label === name));
+
+// Pie chart facultad
+new Chart(document.getElementById('pieFacultad'), {
+  type: 'pie',
+  data: {
+    labels: facultades.map(f => f.label),
+    datasets: [{
+      data: facultades.map(f => f.pct),
+      backgroundColor: facultades.map(f => f.color),
+      borderColor: '#fff',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + '%' } }
+    }
+  },
+  plugins: [{
+    id: 'pctLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      meta.data.forEach((arc, i) => {
+        const pct = facultades[i].pct;
+        if (pct < 4) return;
+        const { x, y } = arc.tooltipPosition();
+        ctx.save();
+        ctx.font = '500 10px sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pct + '%', x, y);
+        ctx.restore();
+      });
+    }
+  }]
+});
+
+// Legend
+const legEl = document.getElementById('pieFacultadLegend');
+facultades.forEach(f => {
+  const div = document.createElement('div');
+  div.className = 'legend-item';
+  div.innerHTML = `<span class="legend-dot" style="background:${f.color}"></span>${f.label}`;
+  legEl.appendChild(div);
+});
+
+// Bar chart CORREGIDO
+new Chart(document.getElementById('barFacultad'), {
+  type: 'bar',
+  data: {
+    labels: barFacs.map(f => f.short),
+    datasets: [
+      {
+        label: 'Programas CIEES',
+        data: barFacs.map(f => f.ciees),
+        backgroundColor: '#4472C4',
+        yAxisID: 'y',
+      },
+      {
+        label: 'Programas SNP 2026',
+        data: barFacs.map(f => f.snp),
+        backgroundColor: '#ED7D31',
+        yAxisID: 'y2',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        ticks: { font: { size: 10 }, autoSkip: false, maxRotation: 45 },
+        grid: { display: false }
+      },
+      y: {
+        position: 'left',
+        min: 0,
+        max: 4,
+        ticks: { stepSize: 0.5, font: { size: 11 } },
+        grid: { color: 'rgba(0,0,0,0.06)' },
+      },
+      y2: {
+        position: 'right',
+        min: 0,
+        max: 16,
+        ticks: { stepSize: 2, font: { size: 11 } },
+        grid: { drawOnChartArea: false },
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {}
+    }
+  },
+  plugins: [{
+    id: 'barValueLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        meta.data.forEach((bar, i) => {
+          const val = ds.data[i];
+          if (!val) return;
+          ctx.save();
+          ctx.font = '500 10px sans-serif';
+          ctx.fillStyle = di === 0 ? '#4472C4' : '#ED7D31';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(val, bar.x, bar.y - 2);
+          ctx.restore();
+        });
+      });
+    }
+  }]
+});
+
+// Pie orientacion
+new Chart(document.getElementById('pieOrientacion'), {
+  type: 'pie',
+  data: {
+    labels: ['Profesionalizante', 'Investigación'],
+    datasets: [{
+      data: [65.5, 34.5],
+      backgroundColor: ['#1F4E79', '#9DC3E6'],
+      borderColor: '#fff',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + '%' } }
+    }
+  },
+  plugins: [{
+    id: 'orLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const pcts = [65.5, 34.5];
+      meta.data.forEach((arc, i) => {
+        const { x, y } = arc.tooltipPosition();
+        ctx.save();
+        ctx.font = '500 13px sans-serif';
+        ctx.fillStyle = i === 0 ? '#fff' : '#1F4E79';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pcts[i] + '%', x, y);
+        ctx.restore();
+      });
+    }
+  }]
+});
+</script>
